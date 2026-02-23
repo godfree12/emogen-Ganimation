@@ -18,7 +18,7 @@ class Options(object):
     def initialize(self):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument('--mode', type=str, default='train', help='Mode of code. [train|test]')
-        parser.add_argument('--model', type=str, default='ganimation', help='[ganimation|stargan], see model.__init__ from more details.')
+        parser.add_argument('--model', type=str, default='ganimation', help='[ganimation], see model.__init__ from more details.')
         parser.add_argument('--lucky_seed', type=int, default=0, help='seed for random initialize, 0 to use current time.')
         parser.add_argument('--visdom_env', type=str, default="main", help='visdom env.')
         parser.add_argument('--visdom_port', type=int, default=8097, help='visdom port.')

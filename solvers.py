@@ -1,8 +1,10 @@
 """
 Created on Dec 13, 2018
 @author: Yuedong Chen
-"""
 
+Modified by: Godfree AKAKPO, 2026-03-22
+Changes: added tqdm progress bar, custom logging
+"""
 from data import create_dataloader
 from model import create_model
 from visualizer import Visualizer
@@ -11,6 +13,7 @@ import time
 import os
 import torch
 import numpy as np
+from tqdm import tqdm
 from PIL import Image
 
 
@@ -67,7 +70,8 @@ class Solver(object):
         epoch_steps = 0
 
         last_print_step_t = time.time()
-        for idx, batch in enumerate(self.train_dataset):
+        pbar = tqdm(self.train_dataset, total=len(self.train_dataset), desc=f"Epoch {epoch}/{self.epoch_len}")
+        for idx, batch in enumerate(pbar):
 
             self.train_total_steps += self.opt.batch_size
             epoch_steps += self.opt.batch_size
@@ -77,16 +81,12 @@ class Solver(object):
             # print losses
             if self.train_total_steps % self.opt.print_losses_freq == 0:
                 cur_losses = self.train_model.get_latest_losses()
-                avg_step_t = (time.time() - last_print_step_t) / self.opt.print_losses_freq
-                last_print_step_t = time.time()
-                # print loss info to command line
-                info_dict = {'epoch': epoch, 'epoch_len': self.epoch_len,
-                            'epoch_steps': idx * self.opt.batch_size, 'epoch_steps_len': len(self.train_dataset),
-                            'step_time': avg_step_t, 'cur_lr': self.cur_lr,
-                            'log_path': os.path.join(self.opt.ckpt_dir, self.opt.log_file),
-                            'losses': cur_losses
-                            }
-                self.visual.print_losses_info(info_dict)
+                pbar.set_postfix({
+                    "dis_fake": f"{cur_losses['dis_fake']:.3f}",
+                    "dis_real": f"{cur_losses['dis_real']:.3f}",
+                    "dis_aus": f"{cur_losses['dis_real_aus']:.3f}",
+                    "gen_rec": f"{cur_losses['gen_rec']:.3f}",
+                })
             
             # plot loss map to visdom
             if self.train_total_steps % self.opt.plot_losses_freq == 0 and self.visual.display_id > 0:

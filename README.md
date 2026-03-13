@@ -1,151 +1,243 @@
-# GANimation -- An Out-of-the-Box Replicate
+# Emogen-GANimation
 
-<p align="left">
-	<img src="https://img.shields.io/badge/Status-Release-gold.svg?style=flat-square" alt="Status">
-	<img src="https://img.shields.io/badge/Platform-Linux | macOS-lightgrey.svg?style=flat-square" alt="Platform">
-	<img src="https://img.shields.io/badge/PyTorch Version-0.4.1-blue.svg?style=flat-square" alt="PyTorch">
-	<img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License">
-</p>
+Generation of facial expressions with conditional GANs based on Action Units (AUs)
 
-**A reimplementation of *[GANimation: Anatomically-aware Facial Animation from a Single Image](https://arxiv.org/abs/1807.09251)*, using PyTorch. Pretrained models/weights are available [HERE](https://drive.google.com/open?id=1MijMc6QnjrNFopT1G43WQFeei9ddcaza)!**
+[![Python](https://img.shields.io/badge/Python-3.6%2B-blue.svg)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-0.4.1%2B-red.svg)](https://pytorch.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-<div align="center">
-	<img src="imgs/gifs/celeba_1.gif">
-    <img src="imgs/gifs/celeba_2.gif">
-    <img src="imgs/gifs/emotionnet_1.gif">
-    <img src="imgs/gifs/emotionnet_2.gif">
-	<img src="imgs/gifs/emotionnet_3.gif">
-    <img src="imgs/gifs/emotionnet_4.gif">
-</div>
+---
 
-![ganimation_show](imgs/ganimation_show.jpg)
+## Description
 
-## Pros (compared with the [official](https://github.com/albertpumarola/GANimation) implementation)
+Emogen-GANimation is an implementation based on the paper  
+[GANimation: Anatomically-aware Facial Animation from a Single Image](https://arxiv.org/abs/1807.09251)  
+(Pumarola et al., ECCV 2018).
 
-* Codes are cleaner and well structured, inspired by the [pytorch-CycleGAN-and-pix2pix](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix).
-* Provide a more powerful test function for generating **linear interpolations** between two expressions as shown in the paper.
-* Provide a **preprocessed [CelebA](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html) dataset**, including cropped faces, Action Units related to all cropped faces, train and test split.
-* Provide **pretrained models** for the above CelebA dataset (trained with ~145k images for 30 epoches).
-* Provide Action Units vectors for the [EmotionNet](https://cbcsl.ece.ohio-state.edu/EmotionNetChallenge/index.html) extracted using [OpenFace](https://github.com/TadasBaltrusaitis/OpenFace).
-* Provide **pretrained models** for the EmotionNet dataset (trained with ~410k images for 30 epoches). 
+The model uses a conditional GAN (Wasserstein GAN-GP) to generate realistic facial expressions from a single image, by manipulating the Action Units (AUs) of the FACS system (Facial Action Coding System).
 
-All resources related to this project are located **[HERE](https://drive.google.com/open?id=1MijMc6QnjrNFopT1G43WQFeei9ddcaza)**.
+---
 
-## Getting Started
+## Why this project
 
-### Requirements
+This project was born from a simple conviction: reproducing a scientific paper is the most honest way to measure what one truly understands. After fifteen rejections for a master’s program, I chose not to endure but to produce. GANimation naturally imposed itself because it concentrates in a single architecture three fields that define my research interests: computer vision, deep learning, and facial expression modeling.
 
-* Python 3
-* PyTorch 0.4.1
-* visdom (optional, only for training with browser visualizer)
-* imageio (optional, only for generating GIF image in testing)
+The objective was not simply to reproduce the results of the original paper, but to measure my ability to adapt a complex architecture to a different context, with fewer resources, a dataset entirely rebuilt from two distinct sources, and only 6 active AUs instead of 14 in the original paper. This project is part of my long-term objective to pursue a Master’s and then a PhD in the field of generative models and computer vision.
 
-### Installation
+---
 
-* Clone this repo:
+## Main features
+
+- Facial expression generation controlled by 6 Action Units: AU03, AU05, AU06, AU08, AU09, AU10
+- Continuous interpolation between two expressions (source → target)
+- Training and testing on 128×128 face images
+- Automatic checkpoint saving and GIF/JPG export of results
+
+---
+
+## Architecture
 
 ```
-git clone https://github.com/donydchen/ganimation_replicate
-cd ganimation_replicate
+Emogen-GANimation/
+├── main.py                  # Main entry point
+├── options.py               # Configuration and CLI arguments
+├── solvers.py               # Training and testing loop
+├── visualizer.py            # Image utilities
+├── model/                   # Network definitions (Generator, Discriminator)
+├── data/                    # Data loading and preprocessing
+│   ├── __init__.py
+│   ├── base_dataset.py      # Base dataset
+│   └── data_loader.py       # Custom DataLoader
+├── train_ids.csv            # Training image IDs
+├── test_ids.csv             # Test image IDs
+├── requirements.txt         # Python dependencies
+└── LICENSE                  # MIT license
+```
+
+---
+
+## Installation
+
+### Prerequisites
+
+- Python 3.6+
+- CUDA-compatible GPU (recommended)
+
+### Steps
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/godfree12/emogen-Ganimation.git
+cd emogen-Ganimation
+
+# 2. Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+# venv\Scripts\activate   # Windows
+
+# 3. Install dependencies
 pip install -r requirements.txt
 ```
 
-### Resources
+### Main dependencies
 
-* All resources related to this project are located **[HERE](https://drive.google.com/open?id=1MijMc6QnjrNFopT1G43WQFeei9ddcaza)**.         
-* Download `datasets` and put it in the root path of this project.       
-* Download `ckpts` and put it in the root path of this project. (optional, only for test or finetune)
-* Note: for the EmotionNet, the AU vectors are saved as a dictionary, where the key is the file name (without extension), and dumped into a pickle file. 
+| Package       | Version   | Description                    |
+|---------------|-----------|--------------------------------|
+| torch         | ≥ 0.4.1   | Deep learning framework        |
+| torchvision   | ≥ 0.2.1   | Computer vision utilities      |
+| imageio       | ≥ 2.5.0   | Image and GIF export           |
+| tqdm          | ≥ 4.0     | Progress bar                   |
 
-### Train
+---
 
-* To view training results and loss plots, run `python -m visdom.server` and click the URL [http://localhost:8097](http://localhost:8097)
+## Dataset used
 
-```
-python main.py --data_root [path_to_dataset]
+This project is based on the fusion of two Kaggle datasets:
 
-# e.g. python main.py --data_root datasets/celebA --gpu_ids 0,1 --sample_img_freq 500
-#      python main.py --data_root datasets/emotionNet --gpu_ids 0,1 --sample_img_freq 500
-#      set '--visdom_display_id 0' if you don't want to use visdom
-#      use 'python main.py -h' to check out more options.
-```
+- AffectNet: 30,600 images (100×100 px)  
+- RAF-DB: 15,300 images (98×98 px)
 
-### Test
+Raw total: ~35,255 images
 
-* Make sure you have trained the model or downloaded the pretrained model.
+### Preprocessing steps
 
-```
-python main.py --mode test --data_root [path_to_dataset] --ckpt_dir [path_to_pretrained_model] --load_epoch [epoch_num]
+1. Raw fusion of the two datasets (organized by emotion)  
+2. Removal of the contempt class absent from RAF-DB  
+3. AU extraction via OpenFace: 29,226 images kept, ~3,250 rejected (~10% loss)  
+4. File renaming to avoid collisions (1,584 duplicates detected between train/test)  
+5. Resizing to 128×128 px  
+6. Final split: 19,332 train images (66%) / 9,894 test images (34%)
 
-# e.g. python main.py --mode test --data_root datasets/celebA --batch_size 8 --max_dataset_size 150 --gpu_ids 0,1 --ckpt_dir ckpts/celebA/ganimation/190327_161852/ --load_epoch 30
-#      set '--interpolate_len 1' if you don't need linear interpolation.
-#      use '--save_test_gif' to generate animated images.
-```
+---
 
-### Finetune
+## Data preparation
 
-```
-python main.py --data_root [path_to_dataset] --ckpt_dir [path_to_existing_checkpoint] --load_epoch [epoch_num] 
+### Expected dataset
 
-# e.g. python main.py --data_root datasets/celebA --gpu_ids 0,1 --sample_img_freq 300 --n_threads 18 --ckpt_dir ckpts/celebA/ganimation/190327_161852 --load_epoch 30 --epoch_count 31 --niter 30 --niter_decay 10
-```
-
-### Use Own Datasets
-
-* **Crop Face:** Use [face_recognition](https://github.com/ageitgey/face_recognition) to extract face bounding box and crop face from images.
-* **Obtain AUs Vector:** Use [OpenFace](https://github.com/TadasBaltrusaitis/OpenFace) to extract Action Units vectors from the above cropped face. Specifically, only the AUs intensity is used in this project, namely `AU01_r, AU02_r, AU04_r, AU05_r, AU06_r, AU07_r, AU09_r, AU10_r, AU12_r, AU14_r, AU15_r, AU17_r, AU20_r, AU23_r, AU25_r, AU26_r, AU45_r`.
+The model expects a dataset organized as follows:
 
 ```
-./FaceLandmarkImg -f [path_to_img] -aus
-
-# In the result file, values of columns [2:19] are extracted for later usage.
+data_root/
+├── imgs/                    # Folder containing face images (128x128)
+│   ├── image001.jpg
+│   ├── image002.jpg
+│   └── ...
+├── aus_openface.pkl         # Pickle dict {image_name: 6_AU_vector}
+├── train_ids.csv            # Training IDs list
+└── test_ids.csv             # Test IDs list
 ```
 
-* **Downlod Pretrained Model:** Since in this project, the EmotionNet employed for training contains more than 400k in-the-wild face images, the pretrained model should meet the requirements of lots of scenes. You're recommended to directly try to apply the EmotionNet pretrained model on your own datasets.
+### Action Unit extraction
 
-## Some Results
+AUs are extracted with OpenFace.  
+The aus_openface.pkl file contains a Python dictionary:
 
-### CelebA 
+```python
+{
+    "image001.jpg": [0.12, 0.45, 0.00, 0.33, 0.71, 0.02],  # AU03, AU05, AU06, AU08, AU09, AU10
+    "image002.jpg": [0.89, 0.23, 0.10, 0.05, 0.44, 0.31],
+    ...
+}
+```
 
-**Training** 
+AUs used (6):
+- AU03: slight brow lowering (tension / mild anger)
+- AU05: upper eyelid raise (surprise / attention)
+- AU06: cheek raise (smile / joy)
+- AU08: slight lip compression (tension / seriousness)
+- AU09: nose wrinkling (disgust)
+- AU10: upper lip raise (disgust / contempt)
 
-![celeba_training](imgs/celeba_training.jpg)
+---
 
-**Testing** (with *GANimation* model, on epoch 30)
+## Usage
 
-![celeba_testing](imgs/celeba_testing.jpg)
+### Training
 
-**Testing** (with *StarGAN* model, on epoch 30)
+```bash
+python main.py \
+    --mode train \
+    --data_root /path/to/dataset \
+    --batch_size 25 \
+    --niter 20 \
+    --niter_decay 10 \
+    --lr 0.0001 \
+    --gan_type wgan-gp \
+    --gpu_ids 0
+```
 
-![celeba_stargan_testing](imgs/celeba_stargan_testing.jpg)
+### Test / Inference
 
-### EmotionNet （Visual quality is much better than that of CelebA）
+```bash
+python main.py \
+    --mode test \
+    --data_root /path/to/dataset \
+    --load_epoch 30 \
+    --ckpt_dir ./ckpts/dataset/ganimation/XXXXXX \
+    --interpolate_len 5 \
+    --gpu_ids 0
+```
 
-**Training**
+### Useful options
 
-![emotionnet_training](imgs/emotionnet_training.jpg)
+| Argument             | Default   | Description                                      |
+|----------------------|-----------|--------------------------------------------------|
+| --mode               | train     | Mode: train or test                              |
+| --data_root          | required  | Path to the dataset                              |
+| --batch_size         | 25        | Batch size                                       |
+| --niter              | 20        | Number of epochs at constant LR                  |
+| --niter_decay        | 10        | Number of epochs with LR decay                   |
+| --lr                 | 0.0001    | Initial learning rate (Adam)                     |
+| --gpu_ids            | 0         | GPU IDs (-1 for CPU)                             |
+| --interpolate_len    | 5         | Number of interpolation steps at test time       |
+| --save_test_gif      | false     | Save results as GIF                              |
+| --lambda_aus         | 160.0     | AU loss weight                                   |
+| --lambda_rec         | 10.0      | Reconstruction loss weight                       |
 
-**Testing** (with *GANimation* model, on epoch 30)
+---
 
-![emotionnet_testing](imgs/emotionnet_testing.jpg)
+## Result examples
 
-**Testing** (with *StarGAN* model, on epoch 30)
+![Result examples](imgs/test_images.png)
 
-![emotionnet_stargan_testing](imgs/emotionnet_stargan_testing.jpg)
+---
 
-## Why this Project?
+## Current limitations
 
-My [mentor](https://jianfeng1991.github.io/personal/) came up with a fancy idea of playing GANs with AUs when I was an intern at AI Lab, [Lenovo Research](http://research.lenovo.com/webapp/view_English/index.html) around early August, 2018. I enjoyed the idea very much and started working on it. However, just a few days after that, the GANimation paper showed up, which was not a good news for us... So I tried to replicate GANimation, and this is the start of this project. 
+Visual artifacts and facial distortions were observed on a subset of generated images. In particular, a progressive white luminous artifact appears around the eyes, as well as an abnormal dark area around the mouth. This suggests that the model does not properly regulate the intensity of local transformations driven by the AUs.
 
-And in late August, 2018, I came accross an [issue](https://github.com/albertpumarola/GANimation/issues/22) on the official GANimation implementation, claiming that the test result is wrong. While in my case, I did get some reasonable results, so I replied that issue with the results I had got. Since the author of GANimation hadn't decided to release the pretrained model yet, I recieved Emails inquiring me whether I could offer my codes and pretrained models from time to time. 
+---
 
-I really wanted to provide the codes and pretrained models. However, I was very busy in the past few months, moving from Beijing to Singapore, working for paper deadlines, so on and so forth. So the codes remained in the server of Lenovo Research for half an year. And these days, I finally got some free time. So I dug out the codes, cleaned them, retrained the network, and now, I make them public. I will keep updating this project if I have time, and hope that these codes can serve to faciliate the research of someone who are working on the related tasks. 
+## Expected results
 
-Feel free to contact me if you need any help from me related to this project.
+The model produces:
+- During training: generated images and attention masks
+- During testing: interpolated images between the source expression and the target expression
 
-## Pull Request 
+```
+Source → Interpolation 1 → ... → Interpolation N → Target
+```
 
-You are always welcome to contribute to this repository by sending a [pull request](https://help.github.com/articles/about-pull-requests/).
+Results are saved in the results/ folder in JPG or GIF format.
 
+---
 
+## References
 
+- Paper: GANimation: Anatomically-aware Facial Animation from a Single Image — Pumarola et al., ECCV 2018
+- FACS: Facial Action Coding System — Ekman & Friesen, 1978
+- Original codebase: donydchen/ganimation_replicate — Yuedong Chen, 2018
+
+---
+
+## Author
+
+Godfree AKAKPO — @godfree12
+
+---
+
+## License
+
+This project is under the MIT license. See the LICENSE file for more details.
+
+---
